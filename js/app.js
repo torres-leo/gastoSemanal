@@ -1,16 +1,16 @@
-// VARIABLES Y SELECTORES
+// * VARIABLES Y SELECTORES
 const formulario = document.querySelector('#agregar-gasto');
 const gastoListado = document.querySelector('#gastos ul');
 
-// EVENTOS
-eventListener();
-function eventListener() {
+// * EVENTOS
+eventListeners();
+function eventListeners() {
 	document.addEventListener('DOMContentLoaded', preguntarPresupuesto);
-
 	formulario.addEventListener('submit', agregarGasto);
 }
 
-// CLASES
+// * CLASSES
+
 class Presupuesto {
 	constructor(presupuesto) {
 		this.presupuesto = Number(presupuesto);
@@ -25,107 +25,102 @@ class Presupuesto {
 	}
 
 	calcularRestante() {
-		const gastado = this.gastos.reduce((total, gasto) => total + gasto.cantidad, 0);
+		const gastado = this.gastos.reduce((total, gasto) => total + gasto.cantidadGasto, 0);
 		this.restante = this.presupuesto - gastado;
-
-		// console.log(this.restante);
 	}
 
 	eliminarGasto(id) {
 		this.gastos = this.gastos.filter((gasto) => gasto.id !== id);
 		this.calcularRestante();
-
 		// console.log(this.gastos);
 	}
 }
 
-// acá irán metodos que imprimirán el html
+// Métodos que van a imprimir html
 class UI {
-	insertarPresupuesto(cantidad) {
-		// extrayendo el valor
-		const { presupuesto, restante } = cantidad;
-		// agregar al html
+	insertarPresupuesto(presupuestoInsertado) {
+		// console.log(cantidad);
+
+		// Extrayendo los valores del objeto
+		const { presupuesto, restante } = presupuestoInsertado;
+
+		// Insertando los valores en el HTML
 		document.querySelector('#total').textContent = presupuesto;
 		document.querySelector('#restante').textContent = restante;
 	}
 
 	imprimirAlerta(mensaje, tipo) {
-		// crear el div
-		const divMensaje = document.createElement('div');
-		divMensaje.classList.add('text-center', 'alert');
+		const existeAlerta = document.querySelector('.alerta');
 
-		if (tipo === 'error') {
-			divMensaje.classList.add('alert-danger');
-		} else {
-			divMensaje.classList.add('alert-success');
+		if (!existeAlerta) {
+			const divAlerta = document.createElement('div');
+			divAlerta.classList.add('alert', 'text-center', 'alerta');
+
+			if (tipo === 'error') {
+				divAlerta.classList.add('alert-danger');
+			} else {
+				divAlerta.classList.add('alert-success');
+			}
+
+			divAlerta.textContent = mensaje;
+
+			document.querySelector('.primario').insertBefore(divAlerta, formulario);
+
+			setTimeout(() => {
+				divAlerta.remove();
+			}, 3000);
 		}
-
-		// mensaje de error
-		divMensaje.textContent = mensaje;
-
-		// insertar en el html
-		document.querySelector('.primario').insertBefore(divMensaje, formulario);
-
-		setTimeout(() => {
-			divMensaje.remove();
-		}, 3000);
 	}
 
 	mostrarGastos(gastos) {
-		// eliminar html previo para que no se repita el anterior registro cuando se inserta uno nuevo
-		this.limpiarHTML();
+		// console.log(gastos);
 
-		// iterar sobre los gastos para mostrar en el html
+		// Limpiamos el html para que al insertar mas registros, no los repita
+		limpiarHTML();
+
+		// Iterar sobre los gastos
 		gastos.forEach((gasto) => {
-			// console.log(gasto);
-			const { nombreGasto, cantidad, id } = gasto;
+			const { nombreGasto, cantidadGasto, id } = gasto;
 
-			// crear un li
+			// Crear LI
 			const nuevoGasto = document.createElement('li');
-			nuevoGasto.className =
-				'list-group-item d-flex justify-content-between align-items-center';
-			// nuevoGasto.setAttribute('data-id', id);
+			nuevoGasto.className = 'list-group-item d-flex justify-content-between align-items-center';
 			nuevoGasto.dataset.id = id;
 			// console.log(nuevoGasto);
 
-			// agregar al html
-			nuevoGasto.innerHTML = `${nombreGasto} <span class="badge badge-primary badge-pill">$ ${cantidad}</span>`;
+			// Agregar el HTML del gasto
+			nuevoGasto.innerHTML = `
+				${nombreGasto} <span class="badge badge-primary badge-pill">$${cantidadGasto}</span>
+			`;
 
-			// boton para borrar gasto
+			// Boton para borrar el gasto
 			const btnBorrar = document.createElement('button');
 			btnBorrar.classList.add('btn', 'btn-danger', 'borrar-gasto');
+			btnBorrar.innerHTML = 'Borrar &times;';
 			btnBorrar.onclick = () => {
 				eliminarGasto(id);
 			};
-			btnBorrar.innerHTML = '&times;';
 
-			// para insertarlo en la linea del gasto
 			nuevoGasto.appendChild(btnBorrar);
 
-			// agregar boton al html
+			// Agregar al html
 			gastoListado.appendChild(nuevoGasto);
 		});
-	}
-
-	limpiarHTML() {
-		while (gastoListado.firstChild) {
-			gastoListado.removeChild(gastoListado.firstChild);
-		}
 	}
 
 	actualizarRestante(restante) {
 		document.querySelector('#restante').textContent = restante;
 	}
 
-	comprobarPresupuesto(presupuestoObj) {
-		const { presupuesto, restante } = presupuestoObj;
+	comprobarPresupuesto(presupuestoInsertadoObj) {
+		const { presupuesto, restante } = presupuestoInsertadoObj;
 		const restanteDiv = document.querySelector('.restante');
 
-		// comprobar el 25%
+		// Comprobar el 25%
 		if (presupuesto / 4 > restante) {
 			restanteDiv.classList.remove('alert-success', 'alert-warning');
 			restanteDiv.classList.add('alert-danger');
-		} else if (presupuesto / 2 > restante) {
+		} else if (presupuesto / 2 >= restante) {
 			restanteDiv.classList.remove('alert-success');
 			restanteDiv.classList.add('alert-warning');
 		} else {
@@ -133,24 +128,21 @@ class UI {
 			restanteDiv.classList.add('alert-success');
 		}
 
-		// si el total es 0
 		if (restante <= 0) {
 			ui.imprimirAlerta('El presupuesto se ha agotado', 'error');
-
-			// deshabilitar el boton de agregar gastos
-			formulario.querySelector('button[type="submit"]').disabled = true;
+			const boton = document.querySelector('#enviar');
+			boton.disabled = true;
 		}
 	}
 }
 
-// instanciar
 const ui = new UI();
-let presupuesto;
+let presupuestoInsertado;
 
-// FUNCIONES
+// * FUNCIONES
 function preguntarPresupuesto() {
 	const presupuestoUsuario = prompt('¿Cuál es tu presupuesto?');
-	// console.log(Number(presupuesto));
+	// console.log(presupuestoUsuario);
 
 	if (
 		presupuestoUsuario === '' ||
@@ -160,58 +152,70 @@ function preguntarPresupuesto() {
 	) {
 		window.location.reload();
 	}
-	presupuesto = new Presupuesto(presupuestoUsuario);
-	console.log(presupuesto);
 
-	ui.insertarPresupuesto(presupuesto);
+	// Una vez tenemos un presupuesto válido, lo instanciamos a su clase
+	presupuestoInsertado = new Presupuesto(presupuestoUsuario);
+
+	ui.insertarPresupuesto(presupuestoInsertado);
 }
 
 function agregarGasto(e) {
 	e.preventDefault();
 
-	// leer los datos del formulario
 	const nombreGasto = document.querySelector('#gasto').value;
-	const cantidad = Number(document.querySelector('#cantidad').value);
+	const cantidadGasto = Number(document.querySelector('#cantidad').value);
+	const { presupuesto } = presupuestoInsertado;
 
-	// validar los datos
-	if (nombreGasto === '' || cantidad === '') {
-		// console.log('Ambos campos son obligatorio');
+	if (nombreGasto === '' || cantidadGasto === '') {
 		ui.imprimirAlerta('Ambos campos son obligatorios', 'error');
 		return;
-	} else if (cantidad <= 0 || isNaN(cantidad)) {
-		ui.imprimirAlerta('Cantidad no valida', 'error');
+	} else if (cantidadGasto <= 0 || isNaN(cantidadGasto)) {
+		ui.imprimirAlerta('La cantidad insertada no es válida', 'error');
+		return;
+	} else if (cantidadGasto > presupuesto) {
+		ui.imprimirAlerta(`El gasto "${nombreGasto}" sobrepasa su presupuesto`, 'error');
 		return;
 	}
+	// Generar un objeto de los gastos
+	const gasto = {
+		nombreGasto,
+		cantidadGasto,
+		id: Date.now(),
+	};
 
-	// generar un objeto para los gastos
-	const gasto = { nombreGasto, cantidad, id: Date.now() };
+	// Agregando un nuevo gasto
+	presupuestoInsertado.nuevoGasto(gasto);
+	// console.log(gasto);
 
-	// añadiendo nuevo gasto
-	presupuesto.nuevoGasto(gasto);
+	ui.imprimirAlerta(`El gasto de "${nombreGasto}" se agregó a la Lista`);
 
-	// mensaje de correcto
-	ui.imprimirAlerta('Gasto agregado a la lista', 'correcto');
-
-	// imprimir los gastos
-	const { gastos, restante } = presupuesto;
+	// Imprimir los gastos
+	const { gastos, restante } = presupuestoInsertado;
 	ui.mostrarGastos(gastos);
-	ui.actualizarRestante(restante);
-	ui.comprobarPresupuesto(presupuesto);
 
-	// reiniciar formulario
+	ui.actualizarRestante(restante);
+
+	ui.comprobarPresupuesto(presupuestoInsertado);
+
+	// Reiniciar el formulario
 	formulario.reset();
 }
 
-// ELIMINAR GASTO
-function eliminarGasto(id) {
-	// eliminar los gastos del objeto
-	presupuesto.eliminarGasto(id);
+function limpiarHTML() {
+	while (gastoListado.firstChild) {
+		gastoListado.removeChild(gastoListado.firstChild);
+	}
+}
 
-	// eliminar los gastos del html
-	const { gastos, restante } = presupuesto;
+function eliminarGasto(id) {
+	// Elimina de la clase
+	presupuestoInsertado.eliminarGasto(id);
+
+	// Elimina los gastos del html
+	const { gastos, restante } = presupuestoInsertado;
 	ui.mostrarGastos(gastos);
 
-	// actualizar el restante por el reembolso
 	ui.actualizarRestante(restante);
-	ui.comprobarPresupuesto(presupuesto);
+
+	ui.comprobarPresupuesto(presupuestoInsertado);
 }
